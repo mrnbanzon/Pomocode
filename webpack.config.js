@@ -1,4 +1,5 @@
 module.exports = {
+  entry: './src/index.jsx',
   output: {
     filename: 'bundle.js',
     hotUpdateChunkFilename: 'hot/hot-update.js',
@@ -8,8 +9,17 @@ module.exports = {
     rules: [
       {
         test: /\.(js|jsx)$/,
-        use: 'babel-loader',
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-react', '@babel/preset-env'],
+          },
+        },
       },
     ],
+  },
+  resolve: {
+    extensions: ['.js', '.jsx'],
   },
 };
