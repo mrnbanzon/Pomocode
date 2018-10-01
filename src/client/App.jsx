@@ -1,8 +1,16 @@
 import React from 'react';
 import axios from 'axios';
-import { GITHUB_CLIENT_ID } from '../../config';
 
-const gitHubOAuth = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo`;
+const query = `query {
+  viewer {
+    name,
+    repositories(last:3) {
+      nodes {
+        name
+      }
+    }
+  }
+}`;
 
 class App extends React.Component {
   constructor(props) {
@@ -10,7 +18,6 @@ class App extends React.Component {
     this.state = {
       token: '',
       code: '',
-      repos: [],
     };
 
     // just in case... I don't think we need it
@@ -31,7 +38,7 @@ class App extends React.Component {
   // retrieve gitHub token
   getGitHubToken(code) {
     axios
-      .get(`/githubToken?code=${code}`)
+      .get(`/token?code=${code}`)
       .then(({ data }) => {
         console.log(data);
         this.setState({
@@ -45,22 +52,11 @@ class App extends React.Component {
   }
 
   // retrieve array of repositories
-  getRepos() {
+  getRepos(query) {
     const { token } = this.state;
-    const query = `query {
-      viewer {
-        name,
-        repositories(last:3) {
-          nodes {
-            name
-          }
-        }
-      }
-    }`;
-
     axios
       .post(
-        'https://api.github.com/graphql?',
+        'https://api.github.com/graphql',
         { query },
         {
           headers: {
@@ -69,7 +65,7 @@ class App extends React.Component {
         },
       )
       .then(({ data }) => {
-        console.log(data);
+        console.log(data.data.viewer.repositories.nodes);
       });
   }
 
@@ -79,8 +75,8 @@ class App extends React.Component {
       <div>
         <p>{code}</p>
         <p>{token}</p>
-        <a href={gitHubOAuth}> Login </a>
-        {token !== '' ? this.getRepos() : null}
+        <a href="/login"> Login </a>
+        {token !== '' ? this.getRepos(query) : null}
       </div>
     );
   }

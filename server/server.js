@@ -5,7 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const { HOST, PORT } = process.env;
-const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } = require('../config.js');
+const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } = process.env;
 
 const app = express();
 
@@ -23,11 +23,20 @@ app.use((req, res, next) => {
 // serve the front-end app. (May not need if serving from Webpack...)
 app.use(express.static(path.join(__dirname, '/../dist')));
 
-// for github authentication, exchange code for token
-app.get('/githubToken', (req, res) => {
+/* --GITHUB API & AUTHENTICATION-- */
+const gitHubOAuth = 'https://github.com/login/oauth';
+const gitHubCode = `/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo`;
+
+// retrieve code from github
+app.get('/login', (req, res) => {
+  res.redirect(gitHubOAuth + gitHubCode);
+});
+
+// retrieve token from github
+app.get('/token', (req, res) => {
   axios
     .post(
-      'https://github.com/login/oauth/access_token',
+      `${gitHubOAuth}/access_token`,
       {
         client_id: GITHUB_CLIENT_ID,
         client_secret: GITHUB_CLIENT_SECRET,
@@ -40,13 +49,15 @@ app.get('/githubToken', (req, res) => {
       },
     )
     .then(({ data }) => {
-      console.log('Token:', data.access_token);
+      // console.log('Token:', data.access_token);
       res.send(data.access_token);
     })
     .catch((err) => {
       res.status(404).send(err);
     });
 });
+
+/* --DB QUERY ENDPOINT(S)-- */
 
 app.listen(PORT, () => {
   console.log(`Listening on http://${HOST}:${PORT}`);
