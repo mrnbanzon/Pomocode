@@ -1,16 +1,25 @@
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 const path = require('path');
-const axios = require('axios');
 const express = require('express');
+const session = require('express-session');
 const bodyParser = require('body-parser');
+const { gitCode, gitToken, gitQuery } = require('../utils/github');
 
 const { HOST, PORT } = process.env;
-const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } = process.env;
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// set session in place
+app.use(
+  session({
+    secret: 'gitPomocode',
+    resave: false,
+    saveUninitialized: true,
+  }),
+);
 
 // CORS headers
 app.use((req, res, next) => {
@@ -24,36 +33,39 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '/../dist')));
 
 /* --GITHUB API & AUTHENTICATION-- */
-const gitHubOAuth = 'https://github.com/login/oauth';
-const gitHubCode = `/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo`;
+// check if in session
+app.get('/session', (req, res) => {
+  const token = req.session.token || null;
+  res.send({ token });
+});
 
 // retrieve code from github
 app.get('/login', (req, res) => {
-  res.redirect(gitHubOAuth + gitHubCode);
+  res.redirect(gitCode);
 });
 
 // retrieve token from github
 app.get('/token', (req, res) => {
-  axios
-    .post(
-      `${gitHubOAuth}/access_token`,
-      {
-        client_id: GITHUB_CLIENT_ID,
-        client_secret: GITHUB_CLIENT_SECRET,
-        code: req.query.code,
-      },
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-      },
-    )
-    .then(({ data }) => {
-      // console.log('Token:', data.access_token);
-      res.send(data.access_token);
+  gitToken(req.query.code)
+    .then((token) => {
+      req.session.token = token;
+      res.redirect('/');
+      // res.send(token);
     })
     .catch((err) => {
-      res.status(404).send(err);
+      res.redirect('/');
+      // res.status(500).send(err);
+    });
+});
+
+// query github API v4(GraphQL)
+app.post('/query', (req, res) => {
+  gitQuery(req.body.token, req.body.query)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send(err);
     });
 });
 
