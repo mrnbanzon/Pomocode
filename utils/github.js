@@ -5,7 +5,7 @@ const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } = process.env;
 const gitHubOAuth = 'https://github.com/login/oauth';
 const gitHubCode = `/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo`;
 const gitHubAPI = 'https://api.github.com/graphql';
-const gitCode = gitHubOAuth + gitHubCode;
+const gitCodeURL = gitHubOAuth + gitHubCode;
 
 // retrieve github token to use API
 const gitToken = (code) => {
@@ -53,6 +53,6 @@ const gitQuery = (token, query) => {
   });
 };
 
-module.exports.gitCode = gitCode;
+module.exports.gitCodeURL = gitCodeURL;
 module.exports.gitToken = gitToken;
 module.exports.gitQuery = gitQuery;

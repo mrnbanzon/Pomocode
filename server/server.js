@@ -3,7 +3,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
-const { gitCode, gitToken, gitQuery } = require('../utils/github');
+const { gitCodeURL, gitToken, gitQuery } = require('../utils/github');
 
 const { HOST, PORT } = process.env;
 
@@ -41,7 +41,7 @@ app.get('/session', (req, res) => {
 
 // retrieve code from github
 app.get('/login', (req, res) => {
-  res.redirect(gitCode);
+  res.redirect(gitCodeURL);
 });
 
 // retrieve token from github
@@ -50,11 +50,9 @@ app.get('/token', (req, res) => {
     .then((token) => {
       req.session.token = token;
       res.redirect('/');
-      // res.send(token);
     })
-    .catch((err) => {
+    .catch(() => {
       res.redirect('/');
-      // res.status(500).send(err);
     });
 });
 
